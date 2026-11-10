@@ -21,6 +21,7 @@ const clients = [
   { id: "kimi", name: "Kimi Code", icon: "kimi" },
   { id: "kimi-code-desktop", name: "Kimi Code Desktop", icon: "kimi-code-desktop" },
   { id: "workbuddy", name: "WorkBuddy", icon: "workbuddy-color" },
+  { id: "RavenAI", name: "RavenAI", icon: "ravenai" },
 ];
 const routes = clients.map((c, i) => ({
   id: 100 + i, seq: 100 + i, time: at(i), agent: c.id, model: "kimi-k3", provider: "kimi-code",
@@ -37,7 +38,7 @@ function serve(lang) {
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/gateway/trace") {
       if (url.searchParams.get("wait")) await new Promise((r) => setTimeout(r, 20e3));
-      return json({ mine: true, now: now.toISOString(), seq: 1, totals: { requests: 0, rerouted: 0, errors: 0 }, routes: [] });
+      return json({ mine: true, now: now.toISOString(), seq: 1, totals: { requests: 1, rerouted: 0, errors: 0 }, routes: [routes[3]] });
     }
     if (url.pathname === "/api/gateway/history") {
       const d = url.searchParams.get("day");
@@ -75,6 +76,13 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         await browser.close();
       });
       await page.goto("http://magpie.test/?view=routing");
+      const raven = page.locator(".rt-src").filter({ hasText: "RavenAI" });
+      await raven.waitFor();
+      assert.equal(await raven.locator(".rt-ic .ic").getAttribute("data-icon"), "ravenai");
+      await page.waitForFunction(() => {
+        const icon = [...document.querySelectorAll(".rt-src")].find((n) => n.textContent.includes("RavenAI"))?.querySelector(".ic");
+        return icon?.querySelector(".mask") && !icon.classList.contains("generic");
+      });
       await page.locator(".rt-days .rt-day").nth(1).click();
       await page.locator(".rt-req").nth(clients.length - 1).waitFor();
       // every picture asked for has come, or failed

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yetone/magpie/internal/agent"
 	"github.com/yetone/magpie/internal/edit"
 	"github.com/yetone/magpie/internal/provider"
 	"github.com/yetone/magpie/internal/sessions"
@@ -41,7 +40,7 @@ var (
 func init() {
 	usageapi.Clients = func() []usageapi.Client {
 		var out []usageapi.Client
-		for _, a := range agent.Clients() {
+		for _, a := range displayClients() {
 			out = append(out, usageapi.Client{ID: a.ID, Name: a.Name, Icon: a.Icon})
 		}
 		return out

@@ -2745,7 +2745,7 @@ func state() stateJSON {
 			s.Served++
 		}
 	}
-	for _, a := range agent.Clients() {
+	for _, a := range displayClients() {
 		s.Clients = append(s.Clients, clientJSON{ID: a.ID, Name: a.Name, Icon: a.Icon})
 	}
 	detected := agent.Detected()

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yetone/magpie/internal/agent"
 	"github.com/yetone/magpie/internal/gateway"
+	"github.com/yetone/magpie/internal/usage"
 )
 
 // genericIcon are the clients magpie has no logo for yet, drawn with the
@@ -17,7 +17,7 @@ var genericIcon = map[string]bool{"ante": true, "pencil": true, "openpencil": tr
 
 // Every client a request can be recorded as is drawn by its own name and
 // icon in the Routing page's request list, Usage and Sessions, which all
-// look the request's client up in /api/state's clients (agent.Clients):
+// look the request's client up in /api/state's clients (displayClients):
 // one not there shows its raw id and the cube (jiabubu on Discord:
 // kimi-code-cli and kimi-code-desktop). This holds the table to the ids
 // the gateway records, and each entry's icon to a file app.js's icon()
@@ -38,7 +38,7 @@ func TestEveryClientHasNameAndIcon(t *testing.T) {
 	exists := func(f string) bool { _, err := os.Stat("assets/icons/" + f); return err == nil }
 
 	clients := map[string]bool{}
-	for _, a := range agent.Clients() {
+	for _, a := range displayClients() {
 		clients[a.ID] = true
 		if strings.TrimSpace(a.Name) == "" {
 			t.Errorf("%s has no name", a.ID)
@@ -74,4 +74,24 @@ func TestEveryClientHasNameAndIcon(t *testing.T) {
 			t.Errorf("the gateway records requests as %s, which isn't among the clients", id)
 		}
 	}
+}
+
+func TestRavenAIDisplayDoesNotChangeRequestIdentity(t *testing.T) {
+	for _, ua := range []string{"RavenAI/claude", "RavenAI/catalog", "RavenAI/openai_agents"} {
+		if got := usage.AgentOf(ua); got != "RavenAI" {
+			t.Errorf("AgentOf(%q) = %q, want existing identity RavenAI", ua, got)
+		}
+	}
+	if usage.IsAgent("RavenAI") {
+		t.Fatal("display metadata must not change gateway agent classification")
+	}
+	for _, client := range displayClients() {
+		if client.ID == "RavenAI" {
+			if client.Name != "RavenAI" || client.Icon != "ravenai" {
+				t.Fatalf("RavenAI display metadata: %+v", client)
+			}
+			return
+		}
+	}
+	t.Fatal("RavenAI is missing from display clients")
 }
